@@ -1,0 +1,22 @@
+# TODO 
+
+- **SCL Metrics**
+	- **PED** (Pickups per Expert per Day)
+		- By Market
+		- By Partner (?)
+		- By FIL (Fixed Inventory Location)
+		- By SKU
+		- Different timeframes
+			- Day 
+			- Week
+			- Month
+	- **UP** (Units per Pickup)
+		- By Market
+		- By Partner (?)
+		- By FIL (Fixed Inventory Location)
+		- By SKU
+		- Different timeframes
+			- Day 
+			- Week
+			- Month
+	- 
