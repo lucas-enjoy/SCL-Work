@@ -1,27 +1,23 @@
-SELECT
-    visit_date
-    , market
-    , MIN(visit_travel_time) AS min_vtt
-    , MAX(visit_travel_time) AS max_vtt
-    , AVG(visit_travel_time) AS avg_vtt
-    , stddev_samp(visit_travel_time)  AS std_vtt
-    , MIN(pickup_travel_time) AS min_ptt
-    , MAX(pickup_travel_time) AS max_ptt
-    , AVG(pickup_travel_time) AS avg_ptt
-    , stddev_samp(pickup_travel_time) AS std_ptt
-    , MIN(pickup_travel_time_per_visit) AS min_pttpv
-    , MAX(pickup_travel_time_per_visit) AS max_pttpv
-    , AVG(pickup_travel_time_per_visit) AS avg_pttpv
-    , stddev_samp(pickup_travel_time_per_visit) AS std_pttpv
-    , MIN(total_travel_time) AS min_ttt
-    , MAX(total_travel_time) AS max_ttt
-    , AVG(total_travel_time) AS avg_ttt
-    , stddev_samp(total_travel_time) AS std_ttt
+SELECT * 
+    -- zone
+    -- , MAX(visit_travel_time) AS max_vtt
+    -- , AVG(visit_travel_time) AS avg_vtt
+    -- , stddev_samp(visit_travel_time)  AS std_vtt
+    -- , MAX(pickup_travel_time) AS max_ptt
+    -- , AVG(pickup_travel_time) AS avg_ptt
+    -- , stddev_samp(pickup_travel_time) AS std_ptt
+    -- , MAX(pickup_travel_time_per_visit) AS max_pttpv
+    -- , AVG(pickup_travel_time_per_visit) AS avg_pttpv
+    -- , stddev_samp(pickup_travel_time_per_visit) AS std_pttpv
+    -- , MAX(total_travel_time) AS max_ttt
+    -- , AVG(total_travel_time) AS avg_ttt
+    -- , stddev_samp(total_travel_time) AS std_ttt
 FROM (
     SELECT
         total_travel_times.visit_id
         , total_travel_times.visit_date
         , total_travel_times.market
+        , total_travel_times.zone
         , total_travel_times.pickup_travel_time
         , total_travel_times.visit_travel_time
         , total_travel_times.pickup_travel_time_per_visit
@@ -35,6 +31,7 @@ FROM (
             , complete_visit_times.visit_duration + complete_visit_times.pickup_travel_time_per_visit AS total_travel_time
             , DATE(convert_to_local(complete_visit_times.visit_date, ec.id)) AS visit_date
             , CONCAT_WS('-', ec.id, ec.market) AS market
+            , complete_visit_times.zone
         FROM (
             SELECT
                 visit_durations.visit_id
@@ -44,6 +41,7 @@ FROM (
                 , visit_fractions.pickup_travel_time_per_visit
                 , visit_durations.expert_id
                 , visit_durations.visit_date
+                , visit_durations.zone
             FROM (
                 SELECT
                     visit_times.visit_id
@@ -51,6 +49,7 @@ FROM (
                     , (EXTRACT(EPOCH FROM visit_times.end_time) - EXTRACT(EPOCH FROM visit_times.start_time))/60 AS visit_duration
                     , visit_times.expert_id
                     , visit_times.visit_date
+                    , visit_times.zone
                 FROM (
                     SELECT
                         vis.id AS visit_id
@@ -59,6 +58,7 @@ FROM (
                         , cb.end_time
                         , vis.expert_id
                         , DATE(cb.start_time) AS visit_date
+                        , zones.zone
                     FROM prod_tables.snp_visits AS vis
                     INNER JOIN prod_tables.snp_order_items AS oi
                     ON vis.order_id = oi.order_id
@@ -70,6 +70,10 @@ FROM (
                     ON vis.travel_time_id = cb.event_id
                     INNER JOIN prod_tables.snp_scheduled_blocks AS sb
                     ON cb.id = sb.calendar_block_id
+                    INNER JOIN d3.d_address AS ad
+                    ON vis.meeting_address_id = ad.address_id
+                    INNER JOIN d3_staging.la_zips_ab AS zones
+                    ON ad.zip = zones.zip
                     AND cb.event_type = 'TravelTime'
                     AND cb.enabled = 'true'
                 ) AS visit_times
@@ -114,15 +118,19 @@ FROM (
         ON ex.expert_id = complete_visit_times.expert_id
         INNER JOIN prod_tables.snp_enjoyment_centers AS ec
         ON ex.current_enjoyment_house_id = ec.id
+        INNER JOIN d3.d_address AS ad
+        ON ad.address_id = ec.address_id
     ) AS total_travel_times
+    WHERE market = '4-LA'
     GROUP BY
         total_travel_times.visit_id
         , total_travel_times.visit_date
         , total_travel_times.market
+        , total_travel_times.zone
         , total_travel_times.pickup_travel_time
         , total_travel_times.visit_travel_time
         , total_travel_times.pickup_travel_time_per_visit
 ) AS travel_times
-WHERE visit_date BETWEEN DATE('2016-11-4') AND DATE('2016-12-02')
-GROUP BY visit_date, market
-ORDER BY visit_date, market
+-- WHERE visit_date BETWEEN DATE('2016-11-4') AND DATE('2016-12-02')
+-- GROUP BY zone
+-- ORDER BY zone

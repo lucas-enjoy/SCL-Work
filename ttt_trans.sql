@@ -1,6 +1,10 @@
 SELECT
-    visit_date
-    , market
+    CASE
+        WHEN visit_date < DATE('2016-11-18')
+        THEN CONCAT_WS('-', market, 'before')
+        ELSE CONCAT_WS('-', market, 'after')
+    END
+    AS market
     , MIN(visit_travel_time) AS min_vtt
     , MAX(visit_travel_time) AS max_vtt
     , AVG(visit_travel_time) AS avg_vtt
@@ -124,5 +128,5 @@ FROM (
         , total_travel_times.pickup_travel_time_per_visit
 ) AS travel_times
 WHERE visit_date BETWEEN DATE('2016-11-4') AND DATE('2016-12-02')
-GROUP BY visit_date, market
-ORDER BY visit_date, market
+GROUP BY 1
+ORDER BY 1
